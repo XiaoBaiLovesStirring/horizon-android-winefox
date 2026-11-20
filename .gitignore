@@ -59,3 +59,6 @@
 
 # Local PR description draft.
 /PR_DESCRIPTION.txt
+
+# Android build outputs written by tools/android_build.py
+/packaging/android/build/
