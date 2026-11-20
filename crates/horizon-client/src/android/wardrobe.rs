@@ -1449,7 +1449,7 @@ impl Wardrobe {
             targets,
             [x + w - toggle_w - 8.0, content_top + 10.0, toggle_w, 32.0],
             if self.models_enabled {
-                "取消变身（回史蒂夫）"
+                "取消变身"
             } else {
                 "恢复变身"
             },
@@ -1459,7 +1459,7 @@ impl Wardrobe {
         let tip = if self.models_root.is_none() {
             "正在定位游戏文件夹…"
         } else if !self.models_enabled {
-            "当前为原版史蒂夫模型；点「恢复变身」换回酒狐"
+            "当前是原版史蒂夫模型；点「恢复变身」换回酒狐"
         } else if self.model_items.is_empty() {
             "内置酒狐模型已就位"
         } else {
