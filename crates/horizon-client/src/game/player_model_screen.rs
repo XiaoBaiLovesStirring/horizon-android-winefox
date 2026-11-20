@@ -222,17 +222,17 @@ impl Game<'_> {
     }
 
     /// 「恢复史蒂夫」：关掉自定义模型，原版皮肤立刻顶上来。玩家类型缓存
-    /// 里存的是烘好的 Part（见 `load_player_type`），所以还得请掉缓存、
-    /// 立刻重建一次，再把手上的类型换掉。
+    /// 里存的是烘好的 Part（见 `load_player_type`），所以还得请掉缓存、按
+    /// 资源根目录重新读一次原版类型（`refresh_player_type` —— 当前目录是
+    /// 游戏文件夹，在那儿读不到 `entity-models.json`），再把手上的类型换
+    /// 掉并重建身体。
     pub(super) fn apply_vanilla_player(&mut self) {
         let root = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
         horizon_client::player_models::set_transform(&root, false);
-        super::perspective::invalidate_player_type(&root);
-        if let Some(kind) = super::perspective::player_type(&root) {
+        if let Some(kind) = super::perspective::refresh_player_type() {
             super::perspective::set_player_type_override(kind);
         }
         self.player_model = None;
-        self.reload_packs();
     }
 
     /// 左键 / 触屏点按：模型页点中槽位即应用并关闭；动作页点中条目即播放

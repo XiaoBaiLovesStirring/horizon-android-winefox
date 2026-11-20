@@ -144,6 +144,11 @@ fn body_visible(invisible: bool, team: Option<&horizon_client::scoreboard::Team>
 /// The player's model type for each resources root it was asked for.
 static PLAYER_TYPES: Mutex<Vec<(PathBuf, Option<Arc<MobType>>)>> = Mutex::new(Vec::new());
 
+/// The resources root the type was last read from (`entity-models.json` and
+/// the player model live there, not in the game home the in-game buttons run
+/// from). `refresh_player_type` re-reads that root.
+static PLAYER_TYPE_ROOT: Mutex<Option<PathBuf>> = Mutex::new(None);
+
 /// The wheel's fresh pick: the in-game model wheel rebuilds the player from
 /// this instead of the world-loaded `Resources.player_type` (which froze at
 /// join time and would keep the old pack forever).
@@ -168,6 +173,7 @@ fn take_player_type_override() -> Option<Arc<MobType>> {
 /// world resources read it as the game starts (`load_world_rest`), so a join
 /// finds it; a resource pack change's new root is read once.
 pub(super) fn player_type(root: &Path) -> Option<Arc<MobType>> {
+    *PLAYER_TYPE_ROOT.lock().unwrap_or_else(|e| e.into_inner()) = Some(root.to_owned());
     let mut cache = PLAYER_TYPES.lock().unwrap_or_else(|e| e.into_inner());
     if let Some((_, kind)) = cache.iter().find(|(cached, _)| cached == root) {
         return kind.clone();
@@ -175,6 +181,21 @@ pub(super) fn player_type(root: &Path) -> Option<Arc<MobType>> {
     let kind = load_player_type(root);
     cache.push((root.to_owned(), kind.clone()));
     kind
+}
+
+/// Re-reads the player type from the root the resources came from. The
+/// in-game 「恢复史蒂夫」 runs with the game home as `current_dir`, where there
+/// is no `entity-models.json`, so reading the type from there yields `None`:
+/// the stale pack type then stayed in place and, with the pack's
+/// `horizon/cpm` sprite gone from the atlas, drew nothing at all.
+pub(super) fn refresh_player_type() -> Option<Arc<MobType>> {
+    let root = PLAYER_TYPE_ROOT
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .clone()
+        .or_else(|| std::env::current_dir().ok())?;
+    invalidate_player_type(&root);
+    player_type(&root)
 }
 
 /// Drops the cached type for `root`: the next `player_type` call re-reads
@@ -469,10 +490,34 @@ impl Game<'_> {
             self.player_model = None;
             return;
         };
+        // A body still built from the pack type after 「取消变身」 is stale: the
+        // pack's sprite left the atlas, so it has to be rebuilt as Steve.
+        if self
+            .player_model
+            .as_ref()
+            .is_some_and(|m| m.kind.texture == horizon_client::player_models::TEXTURE_SPRITE)
+            && !horizon_client::player_models::custom_model_active()
+        {
+            self.player_model = None;
+        }
         if self.player_model.is_none() {
-            // The wheel's pick wins; otherwise the world-loaded type.
-            let kind = take_player_type_override()
-                .or_else(|| self.res.player_type().clone());
+            // The wheel's pick wins; otherwise the world-loaded type. That
+            // one froze at join time, so after 「取消变身」 it can still be the
+            // pack's type: its texture is the `horizon/cpm` sprite the atlas
+            // no longer holds, and the body would draw as nothing. Re-read
+            // the vanilla type from the resources root in that case.
+            let picked = take_player_type_override().or_else(|| self.res.player_type().clone());
+            let pack_active = horizon_client::player_models::custom_model_active();
+            let kind = match picked {
+                Some(kind)
+                    if pack_active
+                        || kind.texture != horizon_client::player_models::TEXTURE_SPRITE =>
+                {
+                    Some(kind)
+                }
+                Some(_) => refresh_player_type(),
+                None => None,
+            };
             let Some(kind) = kind else {
                 return;
             };

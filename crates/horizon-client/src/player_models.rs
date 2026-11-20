@@ -607,6 +607,13 @@ fn apply_animation(
     }
 }
 
+/// Whether a wheel action has to give way to the body: walking/running (the
+/// walk cycle takes the legs back) or a hit (the flinch). Jumping, falling
+/// and standing still keep it playing.
+fn action_interrupted(speed: f32, hurt_time: i32) -> bool {
+    speed > 0.12 || hurt_time > 0
+}
+
 /// The custom model's own animation runtime, run after the humanoid setup:
 /// the wheel's action wins, else the state picks idle / walk / run / sneak /
 /// swim / ride / sleep / death..., and the parallel layers always add their
@@ -625,10 +632,13 @@ pub fn apply_player_animations(
     // The wheel's action (the local player only, mob id 0): a looping one
     // holds until replaced, a once-animation clears itself when done.
     //
-    // Moving, jumping/falling and taking a hit cut it short, the way a pose
-    // mod gives the body back to the walk cycle: a dance that kept playing
-    // while the player ran looked like the legs had stopped responding.
-    let interrupted = s.speed > 0.12 || m.hurt_time > 0 || !m.on_ground;
+    // Walking or taking a hit cuts it short, the way a pose mod gives the
+    // body back to the walk cycle: a dance that kept playing while the player
+    // ran looked like the legs had stopped responding. Standing still,
+    // jumping and falling leave it alone — `on_ground` only means anything on
+    // a mob the AI moves; the window's own body never sets it, so consulting
+    // it cleared every action on its first frame.
+    let interrupted = action_interrupted(s.speed, m.hurt_time);
     if m.id == 0 {
         let mut slot = PLAYER_ACTION.lock().unwrap_or_else(|e| e.into_inner());
         if interrupted {
@@ -944,6 +954,17 @@ mod tests {
             idle_box[1] > 6.2,
             "idle must keep the arm outside the torso: {idle_box:?}"
         );
+    }
+
+    /// Only walking and a hit cut a wheel action short. The window's own body
+    /// has no `on_ground` (only mob AI maintains it), and keying the check on
+    /// it cleared every action the moment it started.
+    #[test]
+    fn actions_hold_still_unless_walking_or_hurt() {
+        assert!(!action_interrupted(0.0, 0));
+        assert!(!action_interrupted(0.05, 0));
+        assert!(action_interrupted(0.5, 0));
+        assert!(action_interrupted(0.0, 4));
     }
 
     fn arm_box(model: &Part, poses: &crate::mobs::anim::Poses) -> [f32; 2] {
