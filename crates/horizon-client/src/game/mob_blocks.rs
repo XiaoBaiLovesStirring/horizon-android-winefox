@@ -553,6 +553,12 @@ impl Game<'_> {
             .player_model
             .as_ref()
             .is_some_and(|p| p.id == mob.id && p.kind.id == mob.kind.id);
+        // The head slot goes with the rest of the armour: a custom player
+        // model (a pack with its own ears/hair) takes the whole body, and a
+        // pumpkin or skull box left floating on its head looks broken.
+        if local_player && horizon_client::player_models::custom_model_active() {
+            return;
+        }
         let mut stack = if local_player {
             let Some(stack) = &self.armor[0] else { return };
             stack.clone()

@@ -157,6 +157,14 @@ impl Game<'_> {
     /// `HumanoidArmorLayer` for the player: (model, texture rect, colour,
     /// overlay) of each worn piece, head to feet.
     pub(super) fn player_armor_layers(&self) -> Vec<(&Part, [f32; 4], u32, u32)> {
+        // A custom player model pack is its own body, drawn with its own
+        // texture layout: the vanilla armour plates would sit over it —
+        // a full helmet box where the pack has ears, sleeves through the
+        // pack's arms. YSM hides the armour layers the same way and leaves
+        // the pack to model what it wants.
+        if horizon_client::player_models::custom_model_active() {
+            return Vec::new();
+        }
         self.stack_armor_layers(&self.armor)
     }
     /// `HumanoidArmorLayer` for worn stacks (head to feet), trims included.
