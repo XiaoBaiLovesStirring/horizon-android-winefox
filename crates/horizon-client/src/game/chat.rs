@@ -470,15 +470,6 @@ impl Game<'_> {
             types.push("minecraft:player".into());
         }
         types.sort();
-        // 车万女仆是本分支内置的生物，`entity-types.json` 里没有它的行（那
-        // 是原版数据表），所以补进命令注册表：`/summon`、`/kill` 的
-        // `type=` 选择器和它们的补全都认得它。
-        if self.res.mob_types().contains_key("minecraft:maid")
-            && !types.iter().any(|t| t == "minecraft:maid")
-        {
-            types.push("minecraft:maid".to_owned());
-            types.sort();
-        }
         reg.entity_types = types;
         let list = |dir: &str| -> Vec<String> {
             let mut out: Vec<String> = std::fs::read_dir(root.join(dir))
@@ -563,6 +554,13 @@ impl Game<'_> {
             .filter(|(_, m)| m.show)
             .map(|(k, _)| k.clone())
             .collect();
+        // 车万女仆：内置实体不在数据表的 `minecraft:entity_type` 注册表里，
+        // 而 `summon` 的实体参数（`ResourceArgument`）解析时只查这一份。
+        // 补在这里而不是前面，是因为 `fill_from_export` 会把整份注册表装进
+        // `by_registry`，早补会被覆盖（或让导出整份丢掉）。
+        if self.res.mob_types().contains_key("minecraft:maid") {
+            reg.add_entity_type("minecraft:maid");
+        }
     }
     /// The block the player is looking at, for coordinate suggestions, and
     /// the entity, for entity arguments (ClientSuggestionProvider).

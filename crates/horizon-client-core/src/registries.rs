@@ -213,6 +213,27 @@ impl Registries {
             }
         }
     }
+    /// 把引擎自带的实体（数据包里没有的那种，比如本分支的
+    /// `minecraft:maid`）补进实体注册表。
+    ///
+    /// 两处都得补：`entity_types` 是补全读的那份，而参数解析走
+    /// [`Self::ids`]——它会先在 `by_registry` 里找 `minecraft:entity_type`
+    /// （数据包导出的 `command-registries.json`），找到就不再看
+    /// `entity_types`。只补前者，表现就是「补全里有、命令说不认识」。
+    pub fn add_entity_type(&mut self, id: &str) {
+        if !self.entity_types.iter().any(|t| t == id) {
+            self.entity_types.push(id.to_owned());
+            self.entity_types.sort();
+        }
+        let ids = self
+            .by_registry
+            .entry("minecraft:entity_type".to_owned())
+            .or_default();
+        if !ids.ids.iter().any(|t| t == id) {
+            ids.ids.push(id.to_owned());
+            ids.ids.sort();
+        }
+    }
     /// The element ids of a registry (sorted).
     pub fn ids(&self, registry: &str) -> &[String] {
         if let Some(r) = self.by_registry.get(registry) {

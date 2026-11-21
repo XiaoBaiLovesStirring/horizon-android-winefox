@@ -879,3 +879,34 @@ fn a_dedicated_server_keeps_seed_and_version_for_game_masters() {
         }
     }
 }
+
+/// 引擎自带的实体（数据包里没有行的，比如本分支的 `minecraft:maid`）得补进
+/// `by_registry` 的实体注册表：补全读 `entity_types`，可 `summon` 的实体参数
+/// 解析走 `Registries::ids`，它一在 `by_registry` 里找到 `minecraft:entity_type`
+/// 就不再看 `entity_types`。只补前者，表现就是「补全里有、命令说不认识」。
+#[test]
+fn a_built_in_entity_type_reaches_the_parser_not_just_the_completions() {
+    let mut reg = reg();
+    // 补全那一份有它，解析那份没有。
+    reg.entity_types.push("minecraft:maid".into());
+    let e = vanilla::dispatcher()
+        .parse("summon minecraft:maid", &reg)
+        .executable()
+        .unwrap_err();
+    assert_eq!(e.message.plain(), "argument.resource.not_found");
+
+    reg.add_entity_type("minecraft:maid");
+    let parse = vanilla::dispatcher().parse("summon minecraft:maid ~ ~ ~", &reg);
+    let (ctx, id) = parse.executable().unwrap();
+    assert_eq!(id, "summon");
+    assert!(
+        matches!(ctx.get("entity"), Some(Arg::Resource(e)) if e == "minecraft:maid"),
+        "{:?}",
+        ctx.get("entity")
+    );
+    // `type=` 选择器走的是同一份 ids。
+    assert!(vanilla::dispatcher()
+        .parse("kill @e[type=minecraft:maid]", &reg)
+        .executable()
+        .is_ok());
+}
