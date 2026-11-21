@@ -870,7 +870,9 @@ pub fn setup(
                 };
                 h.spear_ticks[using_side] = m.extra.using_item as f32 + s.partial;
             }
-            if player && crate::player_models::custom_model_active() {
+            if player && &*m.kind.id == "minecraft:player"
+                && crate::player_models::custom_model_active()
+            {
                 // YSM semantics: a custom pack ships a fully posed skeleton
                 // and its own idle / walk / sneak / ride clips. Running the
                 // vanilla humanoid setup over it overwrites every rest
@@ -897,8 +899,12 @@ pub fn setup(
                     // A custom player model pack drives its own keyframe
                     // animations (idle / walk / sneak... plus the wheel's
                     // actions); they override the humanoid rotations on every
-                    // bone they drive.
-                    crate::player_models::apply_player_animations(m, s, p);
+                    // bone they drive. Only the window's own body: a mannequin
+                    // (the built-in maid) is a different skeleton and keeps
+                    // the vanilla humanoid cycle above.
+                    if &*m.kind.id == "minecraft:player" {
+                        crate::player_models::apply_player_animations(m, s, p);
+                    }
                 }
             }
             if m.ai.aggressive && !bow {

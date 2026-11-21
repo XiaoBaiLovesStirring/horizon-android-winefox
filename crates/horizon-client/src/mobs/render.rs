@@ -209,7 +209,9 @@ pub fn body(m: &Mob) -> (String, String) {
     if avatar(m) {
         // A custom player model pack draws with its own atlas sprite: the
         // player's skin (a different uv layout) would texture it wrongly.
-        if m.kind.texture == crate::player_models::TEXTURE_SPRITE {
+        // The built-in maid model does the same with its own `horizon/…`
+        // sprite — its texture is not a skin either.
+        if m.kind.texture.starts_with("horizon/") {
             return ("main".into(), m.kind.texture.clone());
         }
         // AvatarRenderer: PlayerModel's slim layer for a slim skin.

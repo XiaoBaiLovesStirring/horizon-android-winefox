@@ -82,6 +82,7 @@ pub mod item_tooltip;
 pub mod lan;
 pub mod landing;
 pub mod locator_bar;
+pub mod maid;
 pub mod mcp_server;
 pub mod menu;
 pub mod merchant;

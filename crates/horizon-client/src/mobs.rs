@@ -515,6 +515,15 @@ impl MobTypes {
                 },
             );
         }
+        // 酒狐分支：模特（mannequin）实体换成内置的车万女仆模型。实体类型
+        // 仍是 `minecraft:mannequin`，所以存档、网络 id、`/summon` 和
+        // 刷怪蛋都不用动；只是它的身体换成女仆，动作走原版人形那套
+        // （骨骼名已对齐 `humanoid()`，见 `maid.rs`）。
+        if let Some(kind) = out.get_mut("minecraft:mannequin") {
+            kind.model = Arc::new(crate::maid::model());
+            kind.texture = crate::maid::TEXTURE.to_owned();
+            kind.layers.clear();
+        }
         Ok(Self { types: out })
     }
 }

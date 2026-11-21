@@ -298,6 +298,16 @@ fn first_frame(
         _ => (w, h, pixels),
     }
 }
+/// The built-in maid's texture (horizon-client's `maid.rs`): one sprite, so
+/// the `minecraft:mannequin` body can sample it through its own uv layout
+/// instead of a player skin.
+fn maid_texture() -> PackedImage {
+    let (w, h, rgba) = horizon_assets::player_model::decode_png(include_bytes!(
+        "../../horizon-client/assets/maid/maid.png"
+    ))
+    .expect("the built-in maid texture decodes");
+    ("horizon/maid".into(), w, h, rgba)
+}
 /// `image` inside a one-texel border copied from its opposite edges, the
 /// texels repeat addressing reads past each edge.
 fn wrap_border((name, w, h, data): &PackedImage) -> PackedImage {
@@ -896,6 +906,9 @@ impl HudAtlas {
         }
         if full {
             images.extend(player_model_previews(root));
+        }
+        if full {
+            images.push(maid_texture());
         }
         if full {
             Self::slots(&mut images, crate::trims::slot_size(root));
