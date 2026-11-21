@@ -2002,9 +2002,25 @@ impl Game<'_> {
         ) {
             return Err(err("entity.not_summonable", &[&kind]));
         }
-        let pos = self
+        // 车万女仆：召唤时若落点与召唤者重合，就把她挪到面前 1.5 格。重叠
+        // 时第一人称相机正好在模型内部，模型的每个面都背对镜头、被背面剔
+        // 除，画面上就是一整只「空气」——原版生物也这样，但女仆人形更高、
+        // 和人贴得最紧，最容易被当成没刷出来。`/summon minecraft:maid` 与
+        // `/summon minecraft:maid ~ ~ ~` 都算重合。
+        let mut pos = self
             .position_arg(ctx, "pos")
             .unwrap_or(self.source_position());
+        if kind == "minecraft:maid"
+            && let Some(p) = &self.player
+        {
+            let (dx, dz) = (pos[0] - p.position.x, pos[2] - p.position.z);
+            if dx * dx + dz * dz < 0.25 {
+                // Vec3.directionFromRotation(0, yaw): x = -sin, z = cos.
+                let yaw = f64::from(p.yaw).to_radians();
+                pos[0] -= yaw.sin() * 1.5;
+                pos[2] += yaw.cos() * 1.5;
+            }
+        }
         let block_y = pos[1].floor() as i32;
         if !(-30_000_000.0..30_000_000.0).contains(&pos[0])
             || !(-20_000_000..20_000_000).contains(&block_y)
