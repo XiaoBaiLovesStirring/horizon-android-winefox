@@ -8,10 +8,11 @@
 > - 想换模型的话，直接把 `.bbmodel` / `.ysm` / `.zip` 放进游戏文件夹的
 >   `player-models/`，再把游戏文件夹里 `player-models/settings.json` 的
 >   `model` 改成该文件名即可（读取逻辑和缓存都在 `crates/horizon-client/src/player_models.rs`）；
-> - **车万女仆（Touhou Little Maid）**：模特实体（`minecraft:mannequin`）换成了
->   TLM 默认的博丽灵梦模型，走路 / 挥手 / 潜行用原版人形动作。游戏里
->   `/summon minecraft:mannequin`（需开作弊）即可放一只；模型与贴图版权归
->   TartaricAcid / TLM 模型作者。
+> - **车万女仆（Touhou Little Maid）**：内置一个自己的实体 `minecraft:maid`
+>   （不是模组，和原版生物一样编在引擎里：生物表、命令注册表、存档都直接
+>   认它），模型是 TLM 默认的博丽灵梦。`/summon minecraft:maid`（需开作弊）
+>   叫一只；拿**蛋糕**右键驯服，之后空手右键让她坐下 / 站起来，她会跟着
+>   主人走。模型与贴图版权归 TartaricAcid / TLM 模型作者。
 > - 许可证 MIT，和上游一致；模型与贴图的版权归原作者。
 >
 > 构建方式与上游相同，见 [docs/android.md](docs/android.md)。

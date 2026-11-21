@@ -95,6 +95,8 @@ pub enum Species {
     ZombieNautilus,
     SulfurCube,
     Mannequin,
+    /// 车万女仆（本分支内置的实体，不是原版的）。
+    Maid,
 }
 /// Baby bounding boxes (each class's BABY_DIMENSIONS).
 #[derive(Clone, Copy, Debug)]
@@ -1315,6 +1317,18 @@ pub const ALL: &[Def] = &[
         "mannequin",
         "player#main",
         "entity/player/wide/steve",
+        A::Humanoid { zombie_arms: false },
+        ["", "entity.generic.hurt", "entity.generic.death"],
+        None,
+        Baby::None
+    ),
+    // 车万女仆：本分支内置的实体（`minecraft:maid`），模型和贴图是 TLM 默认
+    // 的灵梦，`MobTypes::load` 直接把它编进表里，不依赖任何数据表或模组。
+    def!(
+        Maid,
+        "maid",
+        "player#main",
+        "horizon/maid",
         A::Humanoid { zombie_arms: false },
         ["", "entity.generic.hurt", "entity.generic.death"],
         None,

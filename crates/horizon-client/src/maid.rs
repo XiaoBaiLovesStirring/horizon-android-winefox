@@ -6,8 +6,9 @@
 //! / `right_arm` / `left_leg` / `right_leg`），于是可以直接吃
 //! `Anim::Humanoid` 的走路、挥手、潜行、睡觉动作。
 //!
-//! 实体本身仍是 `minecraft:mannequin`（模特）：存档、网络 id、`/summon`
-//! 都不用改，`MobTypes::load` 把模特换成本模型（见 `mobs.rs`）。
+//! 实体是本分支自己的 `minecraft:maid`：`MobTypes::load` 直接把这一行
+//! 编进生物表（原版数据表里没有它），命令注册表也放行（见 `game/chat`），
+//! 不需要装任何模组，`/summon minecraft:maid` 就能叫出来一只。
 
 use crate::mobs::Part;
 use std::sync::OnceLock;
@@ -56,5 +57,35 @@ mod tests {
         let faces = walk(&model);
         println!("maid faces = {faces}");
         assert!(faces > 100, "the maid model baked {faces} faces");
+    }
+
+    /// 女仆是编进生物表的第一类实体：`MobTypes::load` 之后 `minecraft:maid`
+    /// 就在 `mob_types` 里，模型是随包的灵梦、动作走人形那套。
+    #[test]
+    fn the_maid_is_a_built_in_entity_type() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../.local/horizon-client")
+            .join(horizon_core::VANILLA_VERSION);
+        if !root.join("entity-types.json").exists() {
+            return;
+        }
+        let types = crate::mobs::MobTypes::load(&root).unwrap();
+        let kind = types
+            .types
+            .get("minecraft:maid")
+            .expect("the maid has its own entity type");
+        assert_eq!(kind.species, crate::mobs::Species::Maid);
+        assert_eq!(kind.texture, TEXTURE);
+        assert!(matches!(
+            kind.anim,
+            crate::mobs::Anim::Humanoid { zombie_arms: false }
+        ));
+        assert!((kind.height - 1.6).abs() < 1e-6 && (kind.width - 0.6).abs() < 1e-6);
+        assert_eq!(kind.max_health, 20.0);
+        // …and the model it draws with is the baked one.
+        assert!(
+            kind.model.children.iter().any(|c| c.name == "head"),
+            "the maid type draws the baked model"
+        );
     }
 }

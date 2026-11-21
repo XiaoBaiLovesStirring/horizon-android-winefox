@@ -630,6 +630,16 @@ pub fn mob_to_nbt(
             map.insert("Sitting".into(), Tag::Byte(i8::from(m.extra.sitting)));
             map.insert("CollarColor".into(), Tag::Byte(m.extra.color as i8));
         }
+        // 车万女仆：主人和坐姿都进存档，和驯服动物一样（TLM 的 ModelId
+        // 之类暂不保存，现在只有一套模型）。
+        "minecraft:maid" => {
+            if let Some(owner) = m.extra.owner {
+                map.insert("Owner".into(), Tag::IntArray(owner.to_vec()));
+            } else {
+                map.remove(&"Owner".into());
+            }
+            map.insert("Sitting".into(), Tag::Byte(i8::from(m.extra.sitting)));
+        }
         "minecraft:panda" => {
             use crate::mobs::panda::GENES;
             for (key, gene) in [
@@ -1698,6 +1708,11 @@ pub fn mob_from_nbt(
         m.extra.sitting = flag(tag, "Sitting");
         m.extra.color =
             number(tag.get("CollarColor")).map_or(crate::mobs::tame::RED, |c| (c as u8) & 15);
+    }
+    if m.species() == crate::mobs::Species::Maid {
+        m.extra.owner = crate::save::uuid_from_tag(tag.get("Owner"));
+        m.extra.tame = m.extra.owner.is_some();
+        m.extra.sitting = flag(tag, "Sitting");
     }
     if m.species() == crate::mobs::Species::Panda {
         let gene = |key| text(tag.get(key)).map_or(0, |n| crate::mobs::panda::gene_from_name(&n));

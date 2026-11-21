@@ -5143,6 +5143,37 @@ impl Game<'_> {
                     m.position.z.floor() as i32 >> 4,
                 ));
             }
+            // 车万女仆：第一次见面拿蛋糕右键就能驯服（TLM 的规矩），驯服
+            // 之后主人空手右键让她坐下 / 站起来。坐下时她会原地不动，
+            // 主人走远了也不会跟。
+            Species::Maid if !m.extra.tame && item == "minecraft:cake" => {
+                consume = true;
+                m.extra.tame = true;
+                m.extra.owner = Some(acting);
+                m.extra.sitting = true;
+                m.persistent = true;
+                m.nav_stop();
+                eat = Some(("entity.generic.eat", 1.0, 1.0));
+                // TamableAnimal.spawnTamingParticles: the hearts.
+                self.mob_event_particles(self.mobs[index].id, 7);
+                let view = self.mob_entity(&self.mobs[index]);
+                self.trigger_entity("minecraft:tame_animal", "entity", &view);
+                let m = &self.mobs[index];
+                self.world.modified.insert((
+                    m.position.x.floor() as i32 >> 4,
+                    m.position.z.floor() as i32 >> 4,
+                ));
+            }
+            Species::Maid if m.extra.tame && m.extra.owner == Some(acting) => {
+                m.extra.sitting = !m.extra.sitting;
+                if m.extra.sitting {
+                    m.nav_stop();
+                }
+                self.world.modified.insert((
+                    m.position.x.floor() as i32 >> 4,
+                    m.position.z.floor() as i32 >> 4,
+                ));
+            }
             // Cat.mobInteract: dye, heal or sit when tame; fish may tame a wild one.
             Species::Cat
                 if m.extra.tame

@@ -575,6 +575,24 @@ pub(super) fn humanoid(p: &mut Poses, s: &State, h: &Hum) {
         swim(p, s.pos, h);
     }
 }
+/// 车万女仆坐下：TLM 的坐姿是盘腿坐在地上，可这套骨架没有膝盖骨，
+/// 所以近似成「腿向前抬起、整个人沉下去半格」，看着像坐在地上而不是
+/// 站着岔开腿。
+fn maid_sit(p: &mut Poses, sitting: bool) {
+    if !sitting {
+        return;
+    }
+    // root 的平移对整棵树生效（模型单位 1/16 格）：沉 5 格像素约三成格。
+    p.get("root")[1] -= 5.0;
+    for (leg, side) in [("left_leg", -1.0f32), ("right_leg", 1.0)] {
+        p.xrot(leg, -1.45);
+        p.yrot(leg, 0.10 * side);
+        p.zrot(leg, 0.0);
+    }
+    p.xrot("body", 0.05);
+    p.get("left_arm")[3] += 0.08;
+    p.get("right_arm")[3] += 0.08;
+}
 /// `Mth.rotLerpRad`.
 fn rot_lerp_rad(a: f32, from: f32, to: f32) -> f32 {
     let mut diff = to - from;
@@ -894,14 +912,16 @@ pub fn setup(
                 }
             } else {
                 humanoid(p, s, &h);
+                if m.species() == super::Species::Maid {
+                    maid_sit(p, m.extra.sitting);
+                }
                 if player {
                     player_model_visibility(p, m.extra.hidden_model_parts, m.extra.spectator);
                     // A custom player model pack drives its own keyframe
                     // animations (idle / walk / sneak... plus the wheel's
                     // actions); they override the humanoid rotations on every
-                    // bone they drive. Only the window's own body: a mannequin
-                    // (the built-in maid) is a different skeleton and keeps
-                    // the vanilla humanoid cycle above.
+                    // bone they drive. Only the window's own body: the built-in
+                    // maid and a mannequin keep the vanilla humanoid cycle.
                     if &*m.kind.id == "minecraft:player" {
                         crate::player_models::apply_player_animations(m, s, p);
                     }

@@ -515,14 +515,22 @@ impl MobTypes {
                 },
             );
         }
-        // 酒狐分支：模特（mannequin）实体换成内置的车万女仆模型。实体类型
-        // 仍是 `minecraft:mannequin`，所以存档、网络 id、`/summon` 和
-        // 刷怪蛋都不用动；只是它的身体换成女仆，动作走原版人形那套
-        // （骨骼名已对齐 `humanoid()`，见 `maid.rs`）。
-        if let Some(kind) = out.get_mut("minecraft:mannequin") {
+        // 车万女仆：本分支内置的生物，和原版的那些一样直接编进表里，不靠
+        // 数据表、也不靠模组。它没有 `entity-types.json` 的行（不是原版
+        // 实体），所以上面那轮循环跳过它；这里照着模特造一份，尺寸和属性
+        // 用自己的（20 点血、0.6 x 1.6），模型 / 贴图换成 TLM 的灵梦，动作
+        // 走原版人形那套（骨骼名已对齐 `humanoid()`，见 `maid.rs`）。
+        if let Some(mut kind) = out.get("minecraft:mannequin").cloned() {
+            kind.id = "minecraft:maid".to_owned();
+            kind.species = Species::Maid;
+            kind.width = 0.6;
+            kind.height = 1.6;
+            kind.eye_height = 1.5;
+            kind.category = "creature".to_owned();
             kind.model = Arc::new(crate::maid::model());
             kind.texture = crate::maid::TEXTURE.to_owned();
             kind.layers.clear();
+            out.insert(kind.id.clone(), kind);
         }
         Ok(Self { types: out })
     }

@@ -306,6 +306,11 @@ fn constructor_maluses(m: &mut Mob) {
 }
 pub fn register(m: &mut Mob) {
     constructor_maluses(m);
+    // 车万女仆：本分支自带的生物，AI 也只有它一套（跟随 / 坐下 / 闲逛）。
+    if m.species() == Species::Maid {
+        super::tame::register_maid(m);
+        return;
+    }
     // Raider subclasses call super.registerGoals() first.
     super::raider::register(m);
     match family(m.species()) {

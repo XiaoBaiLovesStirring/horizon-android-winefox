@@ -470,6 +470,15 @@ impl Game<'_> {
             types.push("minecraft:player".into());
         }
         types.sort();
+        // 车万女仆是本分支内置的生物，`entity-types.json` 里没有它的行（那
+        // 是原版数据表），所以补进命令注册表：`/summon`、`/kill` 的
+        // `type=` 选择器和它们的补全都认得它。
+        if self.res.mob_types().contains_key("minecraft:maid")
+            && !types.iter().any(|t| t == "minecraft:maid")
+        {
+            types.push("minecraft:maid".to_owned());
+            types.sort();
+        }
         reg.entity_types = types;
         let list = |dir: &str| -> Vec<String> {
             let mut out: Vec<String> = std::fs::read_dir(root.join(dir))

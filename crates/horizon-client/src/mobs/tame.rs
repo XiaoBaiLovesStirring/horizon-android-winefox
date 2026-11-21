@@ -100,6 +100,18 @@ pub fn register(m: &mut Mob) {
         ),
     );
 }
+/// 车万女仆的 AI：跟着主人走、被命令坐下就坐着、闲着四处看看。没有原版
+/// 驯服动物那套求偶、讨食、怕羊驼的分支——女仆不该因为挨了一下就跑掉，
+/// 也不吃骨头。
+pub fn register_maid(m: &mut Mob) {
+    let g = &mut m.ai.goals;
+    g.add(0, Float);
+    g.add(1, SitWhenOrdered);
+    g.add(2, FollowOwner::new(1.0, 10.0, 2.0));
+    g.add(3, Stroll::avoiding_water(1.0));
+    g.add(4, LookAtPlayer::new(8.0));
+    g.add(4, RandomLookAround::default());
+}
 /// `Parrot.registerGoals`: a tamed parrot sits when told to and follows its
 /// owner from five blocks away; it wanders to trees (`ParrotWanderGoal`) and
 /// lands on its owner's shoulder.

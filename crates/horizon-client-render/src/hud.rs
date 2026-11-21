@@ -299,8 +299,8 @@ fn first_frame(
     }
 }
 /// The built-in maid's texture (horizon-client's `maid.rs`): one sprite, so
-/// the `minecraft:mannequin` body can sample it through its own uv layout
-/// instead of a player skin.
+/// the `minecraft:maid` body can sample it through its own uv layout instead
+/// of a player skin.
 fn maid_texture() -> PackedImage {
     let (w, h, rgba) = horizon_assets::player_model::decode_png(include_bytes!(
         "../../horizon-client/assets/maid/maid.png"
@@ -906,8 +906,6 @@ impl HudAtlas {
         }
         if full {
             images.extend(player_model_previews(root));
-        }
-        if full {
             images.push(maid_texture());
         }
         if full {
